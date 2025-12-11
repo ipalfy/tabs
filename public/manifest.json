@@ -1,0 +1,16 @@
+{
+  "name": "Tab Inspector",
+  "description": "Modern React-based Tab and Window Manager with Drag and Drop support.",
+  "version": "1.0.0",
+  "permissions": ["tabs", "tabGroups", "sidePanel"],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_title": "Open Tab Inspector"
+  },
+  "side_panel": {
+    "default_path": "index.html"
+  },
+  "manifest_version": 3
+}

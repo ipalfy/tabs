@@ -1,0 +1,23 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# TypeScript v1 declaration files
+typings/
+
+# dotenv environment variables file
+.env
+.env.test
+.env.production
+
+# Next.js build output
+.next
+out
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# OS
+.DS_Store
+Thumbs.db
