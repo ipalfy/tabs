@@ -14,7 +14,7 @@ export function AutoRefocusToggle({ checked, onCheckedChange, disabled }: AutoRe
         <Switch id="auto-refocus" checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
         <label
           htmlFor="auto-refocus"
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 whitespace-nowrap hidden sm:inline-block"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 whitespace-nowrap hidden lg:inline-block"
         >
           Auto-refocus
         </label>

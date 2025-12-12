@@ -3,7 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AutoRefocusToggle } from './components/ui/AutoRefocusToggle';
 import { Input } from './components/ui/input';
 import { Switch } from './components/ui/switch';
-import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs';
+import { Tooltip } from './components/ui/tooltip';
+
 import { BoardView } from './components/views/BoardView';
 import { ListView } from './components/views/ListView';
 import { usePopupSettings } from './hooks/usePopupSettings';
@@ -68,20 +69,33 @@ function App() {
     setExpandAll((prev) => prev === false);
   };
 
-  const openInNewWindow = () => {
-    chrome.windows.create({
-      url: chrome.runtime.getURL('index.html'),
-      type: 'popup',
-      width: 450,
-      height: 700,
-    });
+  const openInNewWindow = async () => {
+    try {
+      const currentWindow = await chrome.windows.getCurrent();
+      chrome.windows.create({
+        url: chrome.runtime.getURL('index.html'),
+        type: 'popup',
+        width: 450,
+        height: 700,
+        left: currentWindow.left,
+        top: (currentWindow.top || 0) + (currentWindow.height || 0) + 10, // Position below current window
+      });
+    } catch (_error) {
+      // Fallback if we can't get current window position
+      chrome.windows.create({
+        url: chrome.runtime.getURL('index.html'),
+        type: 'popup',
+        width: 450,
+        height: 700,
+      });
+    }
   };
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
       {/* Header / Search Bar */}
-      <div className="p-4 border-b flex items-center justify-between gap-4">
-        <div className="relative w-full max-w-md">
+      <div className="p-4 border-b flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="relative flex-1 min-w-0">
           <Input
             placeholder="Filter windows, groups, tabs..."
             value={searchQuery}
@@ -99,53 +113,68 @@ function App() {
           )}
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Switch id="sort-mode" checked={isSortEnabled} onCheckedChange={setIsSortEnabled} />
-            <label
-              htmlFor="sort-mode"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 whitespace-nowrap hidden sm:inline-block"
-            >
-              Recency
-            </label>
-          </div>
+        <div className="flex items-center gap-1 flex-wrap">
+          <Tooltip content="Sort by recency">
+            <div className="flex items-center gap-2">
+              <Switch id="sort-mode" checked={isSortEnabled} onCheckedChange={setIsSortEnabled} />
+              <label
+                htmlFor="sort-mode"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 whitespace-nowrap hidden lg:inline-block"
+              >
+                Recency
+              </label>
+            </div>
+          </Tooltip>
 
           {isPopupWindow && <AutoRefocusToggle checked={autoRefocusEnabled} onCheckedChange={setAutoRefocusEnabled} />}
 
-          <div className="flex items-center gap-2">
+          {!isPopupWindow && (
+            <Tooltip content="Open in new window">
+              <button
+                type="button"
+                onClick={openInNewWindow}
+                className="p-2 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ExternalLink size={18} />
+              </button>
+            </Tooltip>
+          )}
+
+          <Tooltip content="Board view">
             <button
               type="button"
-              onClick={openInNewWindow}
-              className="p-2 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors"
-              title="Open in new window"
+              onClick={() => setCurrentView('board')}
+              className={`p-2 hover:bg-muted rounded-md transition-colors ${
+                currentView === 'board' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
-              <ExternalLink size={18} />
+              <Kanban size={18} />
             </button>
+          </Tooltip>
 
-            <Tabs value={currentView} onValueChange={setCurrentView}>
-              <TabsList>
-                <TabsTrigger value="board">
-                  <Kanban size={16} className="mr-2" />
-                  Board
-                </TabsTrigger>
-                <TabsTrigger value="list">
-                  <ListTree size={16} className="mr-2" />
-                  List
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+          <Tooltip content="List view">
+            <button
+              type="button"
+              onClick={() => setCurrentView('list')}
+              className={`p-2 hover:bg-muted rounded-md transition-colors ${
+                currentView === 'list' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <ListTree size={18} />
+            </button>
+          </Tooltip>
 
-            {currentView === 'list' && (
+          {currentView === 'list' && (
+            <Tooltip content={expandAll === false ? 'Expand All' : 'Collapse All'}>
               <button
                 type="button"
                 onClick={toggleExpandAll}
                 className="p-2 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors"
-                title={expandAll === false ? 'Expand All' : 'Collapse All'}
               >
                 {expandAll === false ? <ChevronsDown size={18} /> : <ChevronsUp size={18} />}
               </button>
-            )}
-          </div>
+            </Tooltip>
+          )}
         </div>
       </div>
 
