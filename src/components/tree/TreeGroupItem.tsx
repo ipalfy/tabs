@@ -140,6 +140,7 @@ export function TreeGroupItem({ group, expandAll, isPopupWindow, autoRefocusEnab
                 tab={tab}
                 isPopupWindow={isPopupWindow}
                 autoRefocusEnabled={autoRefocusEnabled}
+                groupColor={group.color}
               />
             ))}
           </SortableContext>

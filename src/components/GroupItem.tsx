@@ -8,16 +8,23 @@ import { TabItem } from './TabItem';
 
 interface GroupItemProps {
   group: GroupData;
+  expandAll?: boolean | null;
   isPopupWindow: boolean;
   autoRefocusEnabled: boolean;
 }
 
-export function GroupItem({ group, isPopupWindow, autoRefocusEnabled }: GroupItemProps) {
+export function GroupItem({ group, expandAll, isPopupWindow, autoRefocusEnabled }: GroupItemProps) {
   const [collapsed, setCollapsed] = useState(group.collapsed);
 
   useEffect(() => {
     setCollapsed(group.collapsed);
   }, [group.collapsed]);
+
+  useEffect(() => {
+    if (expandAll === true) setCollapsed(false);
+    else if (expandAll === false) setCollapsed(true);
+    else setCollapsed(group.collapsed);
+  }, [expandAll, group.collapsed]);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `group-${group.id}`,
@@ -86,7 +93,11 @@ export function GroupItem({ group, isPopupWindow, autoRefocusEnabled }: GroupIte
         <div className="p-2 space-y-1">
           <SortableContext items={group.tabs.map((t) => `tab-${t.id}`)} strategy={verticalListSortingStrategy}>
             {group.tabs.map((tab) => (
-              <TabItem key={tab.id} tab={tab} isPopupWindow={isPopupWindow} autoRefocusEnabled={autoRefocusEnabled} />
+              <TabItem
+                key={tab.id}
+                tab={tab}
+                groupColor={group.color}
+              />
             ))}
             {group.tabs.length === 0 && (
               <div className="text-xs text-center text-muted-foreground py-2 italic">Empty group</div>

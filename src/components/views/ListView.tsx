@@ -113,12 +113,14 @@ export function ListView({ windows, refresh, expandAll, isPopupWindow, autoRefoc
 
         const [movedTab] = await chrome.tabs.move(activeTab.id, moveProps);
 
-        if (targetGroupId !== -1) {
+        // Only update grouping if the group ID actually changed
+        if (targetGroupId !== -1 && targetGroupId !== activeTab.groupId) {
           await chrome.tabs.group({
             tabIds: movedTab.id,
             groupId: targetGroupId,
           });
-        } else if (activeTab.groupId !== -1) {
+        } else if (activeTab.groupId !== -1 && targetGroupId === -1) {
+          // Explicitly ungroup if moving from a group to no group
           await chrome.tabs.ungroup(movedTab.id);
         }
       }

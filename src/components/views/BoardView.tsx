@@ -23,16 +23,18 @@ import { WindowItem } from '../WindowItem';
 interface BoardViewProps {
   windows: WindowData[];
   refresh: () => void;
+  expandAll?: boolean | null;
   isPopupWindow: boolean;
   autoRefocusEnabled: boolean;
 }
 
-type DragItem =
-  | { type: 'tab'; tab: TabData }
-  | { type: 'group'; group: GroupData }
-  | { type: 'window'; window: WindowData };
-
-export function BoardView({ windows, refresh, isPopupWindow, autoRefocusEnabled }: BoardViewProps) {
+export function BoardView({
+  windows,
+  refresh,
+  expandAll,
+  isPopupWindow,
+  autoRefocusEnabled,
+}: BoardViewProps) {
   const [_activeId, setActiveId] = useState<string | null>(null);
   const [activeItem, setActiveItem] = useState<DragItem | null>(null);
 
@@ -203,6 +205,7 @@ export function BoardView({ windows, refresh, isPopupWindow, autoRefocusEnabled 
             key={window.id}
             window={window}
             index={index}
+            expandAll={expandAll}
             isPopupWindow={isPopupWindow}
             autoRefocusEnabled={autoRefocusEnabled}
           />

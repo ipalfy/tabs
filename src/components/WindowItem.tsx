@@ -9,11 +9,12 @@ import { TabItem } from './TabItem';
 interface WindowItemProps {
   window: WindowData;
   index: number;
+  expandAll?: boolean | null;
   isPopupWindow: boolean;
   autoRefocusEnabled: boolean;
 }
 
-export function WindowItem({ window, index, isPopupWindow, autoRefocusEnabled }: WindowItemProps) {
+export function WindowItem({ window, index, expandAll, isPopupWindow, autoRefocusEnabled }: WindowItemProps) {
   const { setNodeRef } = useDroppable({
     id: `window-${window.id}`,
     data: { type: 'window', window },
@@ -46,6 +47,7 @@ export function WindowItem({ window, index, isPopupWindow, autoRefocusEnabled }:
             <GroupItem
               key={group.id}
               group={group}
+              expandAll={expandAll}
               isPopupWindow={isPopupWindow}
               autoRefocusEnabled={autoRefocusEnabled}
             />

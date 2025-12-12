@@ -9,9 +9,10 @@ interface TreeTabItemProps {
   tab: TabData;
   isPopupWindow: boolean;
   autoRefocusEnabled: boolean;
+  groupColor?: string;
 }
 
-export function TreeTabItem({ tab, isPopupWindow, autoRefocusEnabled }: TreeTabItemProps) {
+export function TreeTabItem({ tab, isPopupWindow, autoRefocusEnabled, groupColor }: TreeTabItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `tab-${tab.id}`,
     data: { type: 'tab', tab },
@@ -50,6 +51,25 @@ export function TreeTabItem({ tab, isPopupWindow, autoRefocusEnabled }: TreeTabI
     chrome.tabs.remove(tab.id);
   };
 
+  const colorMap: Record<string, string> = {
+    grey: 'border-slate-500',
+    blue: 'border-blue-500',
+    red: 'border-red-500',
+    yellow: 'border-yellow-500',
+    green: 'border-green-500',
+    pink: 'border-pink-500',
+    purple: 'border-purple-500',
+    cyan: 'border-cyan-500',
+    orange: 'border-orange-500',
+  };
+
+  const activeBorderClass =
+    tab.active && groupColor && colorMap[groupColor]
+      ? `${colorMap[groupColor]} ring-2 ring-inset` // Colored frame if grouped
+      : tab.active
+        ? 'ring-2 ring-inset ring-primary' // Default frame if active but no group
+        : ''; // Inactive state
+
   return (
     // biome-ignore lint/a11y/useSemanticElements: Container includes other interactive elements
     <div
@@ -57,8 +77,9 @@ export function TreeTabItem({ tab, isPopupWindow, autoRefocusEnabled }: TreeTabI
       id={`tab-node-${tab.id}`}
       style={style}
       className={cn(
-        'group flex items-center gap-3 py-2 px-3 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground border-b border-border/40 bg-background transition-colors',
-        tab.active && 'bg-secondary/30 font-medium',
+        'group flex items-center gap-3 py-2 px-3 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground border-b border-border/40 bg-background transition-all duration-200',
+        activeBorderClass,
+        tab.active ? 'bg-muted' : '',
       )}
       onClick={activateTab}
       onKeyDown={(e) => {

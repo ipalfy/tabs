@@ -7,11 +7,10 @@ import { Tooltip } from './ui/tooltip';
 
 interface TabItemProps {
   tab: TabData;
-  isPopupWindow: boolean;
-  autoRefocusEnabled: boolean;
+  groupColor?: string;
 }
 
-export function TabItem({ tab, isPopupWindow, autoRefocusEnabled }: TabItemProps) {
+export function TabItem({ tab, groupColor }: TabItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `tab-${tab.id}`,
     data: { type: 'tab', tab },
@@ -29,20 +28,6 @@ export function TabItem({ tab, isPopupWindow, autoRefocusEnabled }: TabItemProps
     // Activate tab and focus target window
     await chrome.tabs.update(tab.id, { active: true });
     await chrome.windows.update(tab.windowId, { focused: true });
-
-    // Auto-refocus popup if enabled and in popup context
-    if (isPopupWindow && autoRefocusEnabled) {
-      setTimeout(async () => {
-        try {
-          const currentWindow = await chrome.windows.getCurrent();
-          if (currentWindow.id) {
-            await chrome.windows.update(currentWindow.id, { focused: true });
-          }
-        } catch (_error) {
-          // Popup might be closed, ignore error
-        }
-      }, 1000); // 1 second delay
-    }
   };
 
   const closeTab = (e: React.MouseEvent) => {
@@ -51,6 +36,25 @@ export function TabItem({ tab, isPopupWindow, autoRefocusEnabled }: TabItemProps
   };
 
   const lastAccessed = tab.lastAccessed ? new Date(tab.lastAccessed).toLocaleString() : 'Unknown';
+
+  const colorMap: Record<string, string> = {
+    grey: 'ring-slate-500',
+    blue: 'ring-blue-500',
+    red: 'ring-red-500',
+    yellow: 'ring-yellow-500',
+    green: 'ring-green-500',
+    pink: 'ring-pink-500',
+    purple: 'ring-purple-500',
+    cyan: 'ring-cyan-500',
+    orange: 'ring-orange-500',
+  };
+
+  const activeRingClass =
+    tab.active && groupColor && colorMap[groupColor]
+      ? `${colorMap[groupColor]} ring-2 ring-inset` // Colored frame if grouped
+      : tab.active
+        ? 'ring-2 ring-inset ring-primary' // Default frame if active but no group
+        : ''; // Inactive state
 
   return (
     <Tooltip
@@ -79,7 +83,11 @@ export function TabItem({ tab, isPopupWindow, autoRefocusEnabled }: TabItemProps
         }}
         role="button"
         tabIndex={0}
-        className={`group flex items-center gap-2 p-2 text-sm rounded-md cursor-pointer hover:bg-accent hover:text-accent-foreground border border-transparent hover:border-border transition-colors min-w-0 ${tab.active ? 'bg-secondary' : ''}`}
+        className={cn(
+          'group flex items-center gap-2 p-2 text-sm rounded-md cursor-pointer hover:bg-accent hover:text-accent-foreground border border-transparent hover:border-border transition-colors min-w-0',
+          activeRingClass,
+          tab.active ? 'bg-muted' : '',
+        )}
       >
         {tab.favIconUrl ? (
           <img src={tab.favIconUrl} alt="" className="w-4 h-4 rounded-sm" />

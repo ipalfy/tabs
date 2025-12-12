@@ -80,15 +80,15 @@ export function useTabs(sortEnabled: boolean = false) {
         };
 
         sortedWindows = sortedWindows.map((window) => {
-          // 1. Sort Tabs within Groups
+          // 1. Sort Tabs within Groups (ALWAYS BY INDEX, never recency)
           window.groups.forEach((group) => {
-            group.tabs.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0));
+            group.tabs.sort((a, b) => a.index - b.index);
           });
 
           // 2. Sort Groups within Window (by most recent tab in group)
           window.groups.sort((a, b) => getRecency(b.tabs) - getRecency(a.tabs));
 
-          // 3. Sort Ungrouped Tabs within Window
+          // 3. Sort Ungrouped Tabs within Window (by recency)
           window.ungroupedTabs.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0));
 
           return window;

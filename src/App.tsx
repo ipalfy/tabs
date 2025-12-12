@@ -21,7 +21,7 @@ import { useTabs } from './hooks/useTabs';
 import { filterWindows } from './lib/searchUtils';
 
 function App() {
-  const [isSortEnabled, setIsSortEnabled] = useState(false);
+  const [isSortEnabled, setIsSortEnabled] = useState(true);
   const { windows, refresh } = useTabs(isSortEnabled);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentView, setCurrentView] = useState('list');
@@ -107,6 +107,14 @@ function App() {
         left: currentWindow.left,
         top: (currentWindow.top || 0) + (currentWindow.height || 0) + 10, // Position below current window
       });
+
+      // If we are currently in a side panel (button is visible implies not a popup)
+      // and a new popup was successfully created, hide this side panel.
+      if (!isPopupWindow) {
+        // Assume if button was visible and not a popup, it's a sidepanel.
+        // currentWindow.id is the ID of the browser window this side panel is attached to.
+        await chrome.sidePanel.hide({ windowId: currentWindow.id });
+      }
     } catch (error) {
       console.error('Failed to open new window:', error);
       // Fallback if we can't get current window position
@@ -127,17 +135,15 @@ function App() {
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
       {/* Header / Search Bar */}
       <div className="p-4 border-b flex items-center gap-4">
-        {currentView === 'list' && (
-          <Tooltip content={getExpandButtonTooltip()}>
-            <button
-              type="button"
-              onClick={toggleExpandAll}
-              className="p-2 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors shrink-0"
-            >
-              {getExpandButtonIcon()}
-            </button>
-          </Tooltip>
-        )}
+        <Tooltip content={getExpandButtonTooltip()}>
+          <button
+            type="button"
+            onClick={toggleExpandAll}
+            className="p-2 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          >
+            {getExpandButtonIcon()}
+          </button>
+        </Tooltip>
 
         <div className="relative flex-1 min-w-0">
           <Input
@@ -210,6 +216,7 @@ function App() {
           <BoardView
             windows={filteredWindows}
             refresh={refresh}
+            expandAll={effectiveExpandAll}
             isPopupWindow={isPopupWindow}
             autoRefocusEnabled={autoRefocusEnabled}
           />

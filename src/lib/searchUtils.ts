@@ -1,73 +1,87 @@
-import Fuse from 'fuse.js';
 import type { GroupData, TabData, WindowData } from '../hooks/useTabs';
 
-const FUSE_OPTIONS = {
-  threshold: 0.4,
-  ignoreLocation: true,
-};
-
 export function filterWindows(windows: WindowData[], query: string): WindowData[] {
-  if (!query.trim()) return windows;
+  if (!query.trim()) {
+    return windows;
+  }
 
-  // Create Fuse instances for each type
-  const tabFuse = new Fuse<TabData>([], {
-    ...FUSE_OPTIONS,
-    keys: ['title', 'url'],
-  });
-  const groupFuse = new Fuse<GroupData>([], {
-    ...FUSE_OPTIONS,
-    keys: ['title'],
-  });
-  const windowFuse = new Fuse<WindowData>([], {
-    ...FUSE_OPTIONS,
-    keys: ['id'],
-  }); // Match ID for windows
+  const lowerCaseQuery = query.toLowerCase();
+  const filtered: WindowData[] = [];
 
-  return windows.reduce((acc: WindowData[], win) => {
-    // 1. Check if Window matches directly
-    windowFuse.setCollection([win]);
-    const windowMatches = windowFuse.search(query).length > 0;
+  for (const window of windows) {
+    let windowHasMatch = false;
+    const newGroups: GroupData[] = [];
+    const newUngroupedTabs: TabData[] = [];
 
-    // 2. Process Groups
-    const filteredGroups: GroupData[] = [];
-
-    win.groups.forEach((group) => {
-      groupFuse.setCollection([group]);
-      const groupMatches = groupFuse.search(query).length > 0;
-
-      if (groupMatches) {
-        // If group matches, keep it AND all its tabs (context is key)
-        filteredGroups.push(group);
-      } else {
-        // If group doesn't match, check its tabs
-        tabFuse.setCollection(group.tabs);
-        const matchingTabs = tabFuse.search(query).map((result) => result.item);
-
-        if (matchingTabs.length > 0) {
-          // Create a copy of the group with only matching tabs
-          filteredGroups.push({ ...group, tabs: matchingTabs });
-        }
-      }
-    });
-
-    // 3. Process Ungrouped Tabs
-    tabFuse.setCollection(win.ungroupedTabs);
-    const matchingUngroupedTabs = tabFuse.search(query).map((result) => result.item);
-
-    // 4. Decision: Keep Window?
-    if (windowMatches) {
-      // If window matches, keep everything?
-      // Let's adhere to "show everything in matching container" logic
-      acc.push(win);
-    } else if (filteredGroups.length > 0 || matchingUngroupedTabs.length > 0) {
-      // Keep window with filtered content
-      acc.push({
-        ...win,
-        groups: filteredGroups,
-        ungroupedTabs: matchingUngroupedTabs,
-      });
+    // Check window title
+    if (window.title && window.title.toLowerCase().includes(lowerCaseQuery)) {
+      windowHasMatch = true;
     }
 
-    return acc;
-  }, []);
+    // Filter ungrouped tabs
+    for (const tab of window.ungroupedTabs) {
+      if (
+        tab.title.toLowerCase().includes(lowerCaseQuery) ||
+        tab.url.toLowerCase().includes(lowerCaseQuery)
+      ) {
+        newUngroupedTabs.push(tab);
+        // A match in ungrouped tabs implies the window itself has a match
+        if (!windowHasMatch) { // Only set if not already matched by window title
+            windowHasMatch = true;
+        }
+      }
+    }
+
+    // Filter groups and their tabs
+    for (const group of window.groups) {
+      let groupHasMatch = false;
+      const newTabsInGroup: TabData[] = [];
+
+      // Check group title
+      if (group.title && group.title.toLowerCase().includes(lowerCaseQuery)) {
+        groupHasMatch = true;
+      }
+
+      // Filter tabs within the group
+      for (const tab of group.tabs) {
+        if (
+          tab.title.toLowerCase().includes(lowerCaseQuery) ||
+          tab.url.toLowerCase().includes(lowerCaseQuery)
+        ) {
+          newTabsInGroup.push(tab);
+          // A match in tabs implies the group itself has a match
+          if (!groupHasMatch) { // Only set if not already matched by group title
+              groupHasMatch = true;
+          }
+        }
+      }
+
+      // If the group itself matched (by title or its tabs), include the group
+      if (groupHasMatch) {
+        newGroups.push({
+          ...group,
+          // If group title matched, include all original tabs in group.
+          // Otherwise, only include tabs that matched.
+          tabs: (group.title && group.title.toLowerCase().includes(lowerCaseQuery)) ? group.tabs : newTabsInGroup,
+        });
+        // A match in groups implies the window itself has a match
+        if (!windowHasMatch) { // Only set if not already matched by window title
+            windowHasMatch = true;
+        }
+      }
+    }
+
+    // If the window itself matched (by title or its children), include the window
+    if (windowHasMatch) {
+      filtered.push({
+        ...window,
+        // If window title matched, include all original groups and ungrouped tabs.
+        // Otherwise, only include groups and ungrouped tabs that matched.
+        groups: (window.title && window.title.toLowerCase().includes(lowerCaseQuery)) ? window.groups : newGroups,
+        ungroupedTabs: (window.title && window.title.toLowerCase().includes(lowerCaseQuery)) ? window.ungroupedTabs : newUngroupedTabs,
+      });
+    }
+  }
+
+  return filtered;
 }
