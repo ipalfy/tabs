@@ -24,6 +24,8 @@ interface ListViewProps {
   windows: WindowData[];
   refresh: () => void;
   expandAll?: boolean | null;
+  isPopupWindow: boolean;
+  autoRefocusEnabled: boolean;
 }
 
 type DragItem =
@@ -31,7 +33,7 @@ type DragItem =
   | { type: 'group'; group: GroupData }
   | { type: 'window'; window: WindowData };
 
-export function ListView({ windows, refresh, expandAll }: ListViewProps) {
+export function ListView({ windows, refresh, expandAll, isPopupWindow, autoRefocusEnabled }: ListViewProps) {
   const [_activeId, setActiveId] = useState<string | null>(null);
   const [activeItem, setActiveItem] = useState<DragItem | null>(null);
   const [isAppsCollapsed, setIsAppsCollapsed] = useState(false);
@@ -208,13 +210,22 @@ export function ListView({ windows, refresh, expandAll }: ListViewProps) {
                   index={index + normalWindows.length}
                   expandAll={expandAll}
                   hideHeader={true}
+                  isPopupWindow={isPopupWindow}
+                  autoRefocusEnabled={autoRefocusEnabled}
                 />
               ))}
           </div>
         )}
 
         {normalWindows.map((window, index) => (
-          <TreeWindowItem key={window.id} window={window} index={index} expandAll={expandAll} />
+          <TreeWindowItem
+            key={window.id}
+            window={window}
+            index={index}
+            expandAll={expandAll}
+            isPopupWindow={isPopupWindow}
+            autoRefocusEnabled={autoRefocusEnabled}
+          />
         ))}
 
         {windows.length === 0 && <div className="text-center text-muted-foreground mt-10">No results found</div>}

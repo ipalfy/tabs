@@ -1,8 +1,5 @@
 import { useDroppable } from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CheckSquare, ChevronDown, ChevronRight, Square } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
@@ -16,6 +13,8 @@ interface TreeWindowItemProps {
   index: number;
   expandAll?: boolean | null;
   hideHeader?: boolean;
+  isPopupWindow: boolean;
+  autoRefocusEnabled: boolean;
 }
 
 export function TreeWindowItem({
@@ -23,6 +22,8 @@ export function TreeWindowItem({
   index,
   expandAll,
   hideHeader,
+  isPopupWindow,
+  autoRefocusEnabled,
 }: TreeWindowItemProps) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -36,10 +37,7 @@ export function TreeWindowItem({
     data: { type: 'window', window },
   });
 
-  const allItems = [
-    ...window.groups.map((g) => `group-${g.id}`),
-    ...window.ungroupedTabs.map((t) => `tab-${t.id}`),
-  ];
+  const allItems = [...window.groups.map((g) => `group-${g.id}`), ...window.ungroupedTabs.map((t) => `tab-${t.id}`)];
 
   // Calculate counts for display
   const groupCount = window.groups.length;
@@ -61,7 +59,13 @@ export function TreeWindowItem({
       <SortableContext items={allItems} strategy={verticalListSortingStrategy}>
         {/* Groups */}
         {window.groups.map((group) => (
-          <TreeGroupItem key={group.id} group={group} expandAll={expandAll} />
+          <TreeGroupItem
+            key={group.id}
+            group={group}
+            expandAll={expandAll}
+            isPopupWindow={isPopupWindow}
+            autoRefocusEnabled={autoRefocusEnabled}
+          />
         ))}
 
         {/* Ungrouped Tabs */}
@@ -70,11 +74,7 @@ export function TreeWindowItem({
         ))}
       </SortableContext>
 
-      {allItems.length === 0 && (
-        <div className="pl-4 text-xs text-muted-foreground py-2 italic">
-          Empty Window
-        </div>
-      )}
+      {allItems.length === 0 && <div className="pl-4 text-xs text-muted-foreground py-2 italic">Empty Window</div>}
     </div>
   );
 
@@ -89,10 +89,7 @@ export function TreeWindowItem({
   return (
     <div
       ref={setNodeRef}
-      className={cn(
-        'mb-6 relative pl-3 border-l-2 border-transparent',
-        window.focused && 'border-primary',
-      )}
+      className={cn('mb-6 relative pl-3 border-l-2 border-transparent', window.focused && 'border-primary')}
     >
       {/* Window Header (Pill Style) */}
       {/* biome-ignore lint/a11y/useSemanticElements: Container includes other interactive elements */}
@@ -118,9 +115,7 @@ export function TreeWindowItem({
           </button>
 
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <span className="font-semibold text-sm whitespace-nowrap text-white">
-              Window {index + 1}
-            </span>
+            <span className="font-semibold text-sm whitespace-nowrap text-white">Window {index + 1}</span>
             <span className="text-xs text-gray-200 ml-auto whitespace-nowrap hidden sm:inline-block">
               ({groupCount} Groups, {tabCount} Tabs)
             </span>

@@ -1,8 +1,4 @@
-import {
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ChevronDown, ChevronRight, GripVertical } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -12,23 +8,21 @@ import { TabItem } from './TabItem';
 
 interface GroupItemProps {
   group: GroupData;
+  isPopupWindow: boolean;
+  autoRefocusEnabled: boolean;
 }
 
-export function GroupItem({ group }: GroupItemProps) {
+export function GroupItem({ group, isPopupWindow, autoRefocusEnabled }: GroupItemProps) {
   const [collapsed, setCollapsed] = useState(group.collapsed);
 
   useEffect(() => {
     setCollapsed(group.collapsed);
   }, [group.collapsed]);
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: `group-${group.id}`, data: { type: 'group', group } });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: `group-${group.id}`,
+    data: { type: 'group', group },
+  });
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -59,10 +53,7 @@ export function GroupItem({ group }: GroupItemProps) {
     <div
       ref={setNodeRef}
       style={style}
-      className={cn(
-        'mb-2 rounded-lg border bg-card text-card-foreground shadow-sm',
-        isDragging && 'z-50',
-      )}
+      className={cn('mb-2 rounded-lg border bg-card text-card-foreground shadow-sm', isDragging && 'z-50')}
     >
       {/* Header */}
       {/* biome-ignore lint/a11y/useSemanticElements: Container includes other interactive elements */}
@@ -86,28 +77,19 @@ export function GroupItem({ group }: GroupItemProps) {
           <GripVertical size={16} />
         </span>
         {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-        <span className="font-medium text-sm flex-1">
-          {group.title || 'Unnamed Group'}
-        </span>
-        <span className="ml-auto text-xs text-muted-foreground">
-          {group.tabs.length} tabs
-        </span>
+        <span className="font-medium text-sm flex-1">{group.title || 'Unnamed Group'}</span>
+        <span className="ml-auto text-xs text-muted-foreground">{group.tabs.length} tabs</span>
       </div>
 
       {/* Tabs List */}
       {!collapsed && (
         <div className="p-2 space-y-1">
-          <SortableContext
-            items={group.tabs.map((t) => `tab-${t.id}`)}
-            strategy={verticalListSortingStrategy}
-          >
+          <SortableContext items={group.tabs.map((t) => `tab-${t.id}`)} strategy={verticalListSortingStrategy}>
             {group.tabs.map((tab) => (
-              <TabItem key={tab.id} tab={tab} />
+              <TabItem key={tab.id} tab={tab} isPopupWindow={isPopupWindow} autoRefocusEnabled={autoRefocusEnabled} />
             ))}
             {group.tabs.length === 0 && (
-              <div className="text-xs text-center text-muted-foreground py-2 italic">
-                Empty group
-              </div>
+              <div className="text-xs text-center text-muted-foreground py-2 italic">Empty group</div>
             )}
           </SortableContext>
         </div>

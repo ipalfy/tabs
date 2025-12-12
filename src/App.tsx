@@ -1,17 +1,12 @@
-import {
-  ChevronsDown,
-  ChevronsUp,
-  ExternalLink,
-  Kanban,
-  ListTree,
-  X,
-} from 'lucide-react';
+import { ChevronsDown, ChevronsUp, ExternalLink, Kanban, ListTree, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { AutoRefocusToggle } from './components/ui/AutoRefocusToggle';
 import { Input } from './components/ui/input';
 import { Switch } from './components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs';
 import { BoardView } from './components/views/BoardView';
 import { ListView } from './components/views/ListView';
+import { usePopupSettings } from './hooks/usePopupSettings';
 import { useTabs } from './hooks/useTabs';
 import { filterWindows } from './lib/searchUtils';
 
@@ -21,6 +16,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentView, setCurrentView] = useState('list');
   const [expandAll, setExpandAll] = useState<boolean | null>(null);
+  const { isPopupWindow, autoRefocusEnabled, setAutoRefocusEnabled } = usePopupSettings();
 
   const filteredWindows = useMemo(() => {
     const result = filterWindows(windows, searchQuery);
@@ -105,11 +101,7 @@ function App() {
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <Switch
-              id="sort-mode"
-              checked={isSortEnabled}
-              onCheckedChange={setIsSortEnabled}
-            />
+            <Switch id="sort-mode" checked={isSortEnabled} onCheckedChange={setIsSortEnabled} />
             <label
               htmlFor="sort-mode"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 whitespace-nowrap hidden sm:inline-block"
@@ -117,6 +109,8 @@ function App() {
               Recency
             </label>
           </div>
+
+          {isPopupWindow && <AutoRefocusToggle checked={autoRefocusEnabled} onCheckedChange={setAutoRefocusEnabled} />}
 
           <div className="flex items-center gap-2">
             <button
@@ -148,11 +142,7 @@ function App() {
                 className="p-2 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors"
                 title={expandAll === false ? 'Expand All' : 'Collapse All'}
               >
-                {expandAll === false ? (
-                  <ChevronsDown size={18} />
-                ) : (
-                  <ChevronsUp size={18} />
-                )}
+                {expandAll === false ? <ChevronsDown size={18} /> : <ChevronsUp size={18} />}
               </button>
             )}
           </div>
@@ -161,12 +151,19 @@ function App() {
 
       <div className="flex-1 overflow-hidden">
         {currentView === 'board' ? (
-          <BoardView windows={filteredWindows} refresh={refresh} />
+          <BoardView
+            windows={filteredWindows}
+            refresh={refresh}
+            isPopupWindow={isPopupWindow}
+            autoRefocusEnabled={autoRefocusEnabled}
+          />
         ) : (
           <ListView
             windows={filteredWindows}
             refresh={refresh}
             expandAll={expandAll}
+            isPopupWindow={isPopupWindow}
+            autoRefocusEnabled={autoRefocusEnabled}
           />
         )}
       </div>

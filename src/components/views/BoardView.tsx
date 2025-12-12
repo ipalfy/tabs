@@ -23,6 +23,8 @@ import { WindowItem } from '../WindowItem';
 interface BoardViewProps {
   windows: WindowData[];
   refresh: () => void;
+  isPopupWindow: boolean;
+  autoRefocusEnabled: boolean;
 }
 
 type DragItem =
@@ -30,7 +32,7 @@ type DragItem =
   | { type: 'group'; group: GroupData }
   | { type: 'window'; window: WindowData };
 
-export function BoardView({ windows, refresh }: BoardViewProps) {
+export function BoardView({ windows, refresh, isPopupWindow, autoRefocusEnabled }: BoardViewProps) {
   const [_activeId, setActiveId] = useState<string | null>(null);
   const [activeItem, setActiveItem] = useState<DragItem | null>(null);
 
@@ -70,9 +72,7 @@ export function BoardView({ windows, refresh }: BoardViewProps) {
     const activeType = active.data.current?.type;
     const overType = over.data.current?.type;
 
-    console.log(
-      `Dropped ${activeType} (${activeIdStr}) over ${overType} (${overIdStr})`,
-    );
+    console.log(`Dropped ${activeType} (${activeIdStr}) over ${overType} (${overIdStr})`);
 
     try {
       // --- CASE 1: Moving a Tab ---
@@ -148,8 +148,7 @@ export function BoardView({ windows, refresh }: BoardViewProps) {
               chrome.windows.get(activeGroup.windowId),
               chrome.windows.get(targetWindow.id),
             ]);
-            if (sourceWin.type !== 'normal' || targetWin.type !== 'normal')
-              return;
+            if (sourceWin.type !== 'normal' || targetWin.type !== 'normal') return;
 
             await chrome.tabGroups.move(activeGroup.id, {
               windowId: targetWindow.id,
@@ -164,8 +163,7 @@ export function BoardView({ windows, refresh }: BoardViewProps) {
             chrome.windows.get(activeGroup.windowId),
             chrome.windows.get(overGroup.windowId),
           ]);
-          if (sourceWin.type !== 'normal' || targetWin.type !== 'normal')
-            return;
+          if (sourceWin.type !== 'normal' || targetWin.type !== 'normal') return;
 
           await chrome.tabGroups.move(activeGroup.id, {
             windowId: overGroup.windowId,
@@ -201,12 +199,16 @@ export function BoardView({ windows, refresh }: BoardViewProps) {
     >
       <div className="flex flex-1 w-full overflow-x-auto h-full">
         {windows.map((window, index) => (
-          <WindowItem key={window.id} window={window} index={index} />
+          <WindowItem
+            key={window.id}
+            window={window}
+            index={index}
+            isPopupWindow={isPopupWindow}
+            autoRefocusEnabled={autoRefocusEnabled}
+          />
         ))}
         {windows.length === 0 && (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground">
-            No results found
-          </div>
+          <div className="flex-1 flex items-center justify-center text-muted-foreground">No results found</div>
         )}
       </div>
 

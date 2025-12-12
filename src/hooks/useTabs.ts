@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from 'react';
 
 export interface TabData extends chrome.tabs.Tab {
   id: number;
@@ -20,14 +20,12 @@ export function useTabs(sortEnabled: boolean = false) {
 
   const fetchData = useCallback(async () => {
     try {
-      const [allWindows, allTabs, allGroups, currentWindow] = await Promise.all(
-        [
-          chrome.windows.getAll(),
-          chrome.tabs.query({}),
-          chrome.tabGroups.query({}),
-          chrome.windows.getCurrent(),
-        ],
-      );
+      const [allWindows, allTabs, allGroups, currentWindow] = await Promise.all([
+        chrome.windows.getAll(),
+        chrome.tabs.query({}),
+        chrome.tabGroups.query({}),
+        chrome.windows.getCurrent(),
+      ]);
 
       const groupMap = new Map<number, GroupData>();
       allGroups.forEach((g) => {
@@ -37,10 +35,7 @@ export function useTabs(sortEnabled: boolean = false) {
       const windowMap = new Map<number, WindowData>();
       allWindows.forEach((w) => {
         if (w.id === currentWindow.id) return; // Skip the extension's own window
-        if (
-          w.id &&
-          (w.type === "normal" || w.type === "app" || w.type === "popup")
-        ) {
+        if (w.id && (w.type === 'normal' || w.type === 'app' || w.type === 'popup')) {
           windowMap.set(w.id, {
             ...w,
             id: w.id,
@@ -87,32 +82,22 @@ export function useTabs(sortEnabled: boolean = false) {
         sortedWindows = sortedWindows.map((window) => {
           // 1. Sort Tabs within Groups
           window.groups.forEach((group) => {
-            group.tabs.sort(
-              (a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0),
-            );
+            group.tabs.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0));
           });
 
           // 2. Sort Groups within Window (by most recent tab in group)
           window.groups.sort((a, b) => getRecency(b.tabs) - getRecency(a.tabs));
 
           // 3. Sort Ungrouped Tabs within Window
-          window.ungroupedTabs.sort(
-            (a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0),
-          );
+          window.ungroupedTabs.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0));
 
           return window;
         });
 
         // 4. Sort Windows (by most recent content)
         sortedWindows.sort((a, b) => {
-          const recencyA = Math.max(
-            getRecency(a.ungroupedTabs),
-            ...a.groups.map((g) => getRecency(g.tabs)),
-          );
-          const recencyB = Math.max(
-            getRecency(b.ungroupedTabs),
-            ...b.groups.map((g) => getRecency(g.tabs)),
-          );
+          const recencyA = Math.max(getRecency(a.ungroupedTabs), ...a.groups.map((g) => getRecency(g.tabs)));
+          const recencyB = Math.max(getRecency(b.ungroupedTabs), ...b.groups.map((g) => getRecency(g.tabs)));
           return recencyB - recencyA;
         });
       } else {
@@ -125,12 +110,8 @@ export function useTabs(sortEnabled: boolean = false) {
 
           // 2. Sort Groups by the index of their first tab (approximate visual order)
           window.groups.sort((a, b) => {
-            const minIndexA = a.tabs.length > 0
-              ? Math.min(...a.tabs.map((t) => t.index))
-              : Infinity;
-            const minIndexB = b.tabs.length > 0
-              ? Math.min(...b.tabs.map((t) => t.index))
-              : Infinity;
+            const minIndexA = a.tabs.length > 0 ? Math.min(...a.tabs.map((t) => t.index)) : Infinity;
+            const minIndexB = b.tabs.length > 0 ? Math.min(...b.tabs.map((t) => t.index)) : Infinity;
             return minIndexA - minIndexB;
           });
 
@@ -144,7 +125,7 @@ export function useTabs(sortEnabled: boolean = false) {
 
       setWindows(sortedWindows);
     } catch (error) {
-      console.error("Error fetching tab data:", error);
+      console.error('Error fetching tab data:', error);
     }
   }, [sortEnabled]);
 

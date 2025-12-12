@@ -6,10 +6,7 @@ const FUSE_OPTIONS = {
   ignoreLocation: true,
 };
 
-export function filterWindows(
-  windows: WindowData[],
-  query: string,
-): WindowData[] {
+export function filterWindows(windows: WindowData[], query: string): WindowData[] {
   if (!query.trim()) return windows;
 
   // Create Fuse instances for each type
@@ -55,9 +52,7 @@ export function filterWindows(
 
     // 3. Process Ungrouped Tabs
     tabFuse.setCollection(win.ungroupedTabs);
-    const matchingUngroupedTabs = tabFuse
-      .search(query)
-      .map((result) => result.item);
+    const matchingUngroupedTabs = tabFuse.search(query).map((result) => result.item);
 
     // 4. Decision: Keep Window?
     if (windowMatches) {

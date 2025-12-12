@@ -1,8 +1,5 @@
 import { useDroppable } from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Monitor } from 'lucide-react';
 import type { WindowData } from '../hooks/useTabs';
 import { getWindowTitle } from '../lib/utils';
@@ -12,18 +9,17 @@ import { TabItem } from './TabItem';
 interface WindowItemProps {
   window: WindowData;
   index: number;
+  isPopupWindow: boolean;
+  autoRefocusEnabled: boolean;
 }
 
-export function WindowItem({ window, index }: WindowItemProps) {
+export function WindowItem({ window, index, isPopupWindow, autoRefocusEnabled }: WindowItemProps) {
   const { setNodeRef } = useDroppable({
     id: `window-${window.id}`,
     data: { type: 'window', window },
   });
 
-  const allItems = [
-    ...window.groups.map((g) => `group-${g.id}`),
-    ...window.ungroupedTabs.map((t) => `tab-${t.id}`),
-  ];
+  const allItems = [...window.groups.map((g) => `group-${g.id}`), ...window.ungroupedTabs.map((t) => `tab-${t.id}`)];
 
   const _focusWindow = () => {
     chrome.windows.update(window.id, { focused: true });
@@ -37,23 +33,22 @@ export function WindowItem({ window, index }: WindowItemProps) {
       className={`flex flex-col h-full bg-slate-50 dark:bg-slate-900 border-r border-border min-w-[300px] max-w-[350px] ${window.focused ? 'ring-2 ring-primary ring-inset' : ''}`}
     >
       <div className="p-4 border-b bg-background sticky top-0 z-10 flex items-center gap-2 font-semibold select-none">
-        <Monitor
-          size={18}
-          className={window.focused ? 'text-primary' : 'text-muted-foreground'}
-        />
+        <Monitor size={18} className={window.focused ? 'text-primary' : 'text-muted-foreground'} />
         <span className="truncate" title={windowTitle}>
           {windowTitle}
         </span>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <SortableContext
-          items={allItems}
-          strategy={verticalListSortingStrategy}
-        >
+        <SortableContext items={allItems} strategy={verticalListSortingStrategy}>
           {/* Render Groups First */}
           {window.groups.map((group) => (
-            <GroupItem key={group.id} group={group} />
+            <GroupItem
+              key={group.id}
+              group={group}
+              isPopupWindow={isPopupWindow}
+              autoRefocusEnabled={autoRefocusEnabled}
+            />
           ))}
 
           {/* Then Render Ungrouped Tabs */}

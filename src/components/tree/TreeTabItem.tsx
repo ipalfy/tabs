@@ -7,9 +7,11 @@ import { cn } from '../../lib/utils';
 
 interface TreeTabItemProps {
   tab: TabData;
+  isPopupWindow: boolean;
+  autoRefocusEnabled: boolean;
 }
 
-export function TreeTabItem({ tab }: TreeTabItemProps) {
+export function TreeTabItem({ tab, isPopupWindow, autoRefocusEnabled }: TreeTabItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `tab-${tab.id}`,
     data: { type: 'tab', tab },
@@ -21,10 +23,26 @@ export function TreeTabItem({ tab }: TreeTabItemProps) {
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const activateTab = (e: React.MouseEvent) => {
+  const activateTab = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    chrome.tabs.update(tab.id, { active: true });
-    chrome.windows.update(tab.windowId, { focused: true });
+
+    // Activate tab and focus target window
+    await chrome.tabs.update(tab.id, { active: true });
+    await chrome.windows.update(tab.windowId, { focused: true });
+
+    // Auto-refocus popup if enabled and in popup context
+    if (isPopupWindow && autoRefocusEnabled) {
+      setTimeout(async () => {
+        try {
+          const currentWindow = await chrome.windows.getCurrent();
+          if (currentWindow.id) {
+            await chrome.windows.update(currentWindow.id, { focused: true });
+          }
+        } catch (_error) {
+          // Popup might be closed, ignore error
+        }
+      }, 1000); // 1 second delay
+    }
   };
 
   const closeTab = (e: React.MouseEvent) => {

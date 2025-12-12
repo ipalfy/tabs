@@ -7,17 +7,15 @@ import { Tooltip } from './ui/tooltip';
 
 interface TabItemProps {
   tab: TabData;
+  isPopupWindow: boolean;
+  autoRefocusEnabled: boolean;
 }
 
-export function TabItem({ tab }: TabItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: `tab-${tab.id}`, data: { type: 'tab', tab } });
+export function TabItem({ tab, isPopupWindow, autoRefocusEnabled }: TabItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: `tab-${tab.id}`,
+    data: { type: 'tab', tab },
+  });
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -25,10 +23,26 @@ export function TabItem({ tab }: TabItemProps) {
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const activateTab = (e: React.MouseEvent) => {
+  const activateTab = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    chrome.tabs.update(tab.id, { active: true });
-    chrome.windows.update(tab.windowId, { focused: true });
+
+    // Activate tab and focus target window
+    await chrome.tabs.update(tab.id, { active: true });
+    await chrome.windows.update(tab.windowId, { focused: true });
+
+    // Auto-refocus popup if enabled and in popup context
+    if (isPopupWindow && autoRefocusEnabled) {
+      setTimeout(async () => {
+        try {
+          const currentWindow = await chrome.windows.getCurrent();
+          if (currentWindow.id) {
+            await chrome.windows.update(currentWindow.id, { focused: true });
+          }
+        } catch (_error) {
+          // Popup might be closed, ignore error
+        }
+      }, 1000); // 1 second delay
+    }
   };
 
   const closeTab = (e: React.MouseEvent) => {
@@ -36,9 +50,7 @@ export function TabItem({ tab }: TabItemProps) {
     chrome.tabs.remove(tab.id);
   };
 
-  const lastAccessed = tab.lastAccessed
-    ? new Date(tab.lastAccessed).toLocaleString()
-    : 'Unknown';
+  const lastAccessed = tab.lastAccessed ? new Date(tab.lastAccessed).toLocaleString() : 'Unknown';
 
   return (
     <Tooltip
