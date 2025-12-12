@@ -3,14 +3,16 @@ import { CSS } from '@dnd-kit/utilities';
 import { X } from 'lucide-react';
 import type React from 'react';
 import type { TabData } from '../hooks/useTabs';
+import { cn } from '../lib/utils';
 import { Tooltip } from './ui/tooltip';
 
 interface TabItemProps {
   tab: TabData;
   groupColor?: string;
+  isActiveWindow?: boolean;
 }
 
-export function TabItem({ tab, groupColor }: TabItemProps) {
+export function TabItem({ tab, groupColor, isActiveWindow = false }: TabItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `tab-${tab.id}`,
     data: { type: 'tab', tab },
@@ -50,11 +52,11 @@ export function TabItem({ tab, groupColor }: TabItemProps) {
   };
 
   const activeRingClass =
-    tab.active && groupColor && colorMap[groupColor]
-      ? `${colorMap[groupColor]} ring-2 ring-inset` // Colored frame if grouped
-      : tab.active
-        ? 'ring-2 ring-inset ring-primary' // Default frame if active but no group
-        : ''; // Inactive state
+    tab.active && isActiveWindow
+      ? groupColor && colorMap[groupColor]
+        ? `${colorMap[groupColor]} ring-2 ring-inset` // Colored frame if grouped AND active window
+        : 'ring-2 ring-inset ring-primary' // Default frame if active but no group AND active window
+      : ''; // Inactive or background active
 
   return (
     <Tooltip
@@ -86,7 +88,8 @@ export function TabItem({ tab, groupColor }: TabItemProps) {
         className={cn(
           'group flex items-center gap-2 p-2 text-sm rounded-md cursor-pointer hover:bg-accent hover:text-accent-foreground border border-transparent hover:border-border transition-colors min-w-0',
           activeRingClass,
-          tab.active ? 'bg-muted' : '',
+          tab.active && isActiveWindow ? 'bg-muted' : '',
+          tab.active && !isActiveWindow ? 'font-bold bg-muted/50' : '', // Subtle style for background active tabs
         )}
       >
         {tab.favIconUrl ? (

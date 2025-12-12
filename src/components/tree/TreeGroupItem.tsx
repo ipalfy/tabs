@@ -12,9 +12,16 @@ interface TreeGroupItemProps {
   expandAll?: boolean | null;
   isPopupWindow: boolean;
   autoRefocusEnabled: boolean;
+  isActiveWindow?: boolean;
 }
 
-export function TreeGroupItem({ group, expandAll, isPopupWindow, autoRefocusEnabled }: TreeGroupItemProps) {
+export function TreeGroupItem({
+  group,
+  expandAll,
+  isPopupWindow,
+  autoRefocusEnabled,
+  isActiveWindow,
+}: TreeGroupItemProps) {
   const [collapsed, setCollapsed] = useState(group.collapsed);
 
   useEffect(() => {
@@ -141,6 +148,7 @@ export function TreeGroupItem({ group, expandAll, isPopupWindow, autoRefocusEnab
                 isPopupWindow={isPopupWindow}
                 autoRefocusEnabled={autoRefocusEnabled}
                 groupColor={group.color}
+                isActiveWindow={isActiveWindow}
               />
             ))}
           </SortableContext>

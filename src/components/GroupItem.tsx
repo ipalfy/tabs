@@ -9,11 +9,14 @@ import { TabItem } from './TabItem';
 interface GroupItemProps {
   group: GroupData;
   expandAll?: boolean | null;
-  isPopupWindow: boolean;
-  autoRefocusEnabled: boolean;
+  isActiveWindow?: boolean;
 }
 
-export function GroupItem({ group, expandAll, isPopupWindow, autoRefocusEnabled }: GroupItemProps) {
+export function GroupItem({
+  group,
+  expandAll,
+  isActiveWindow,
+}: GroupItemProps) {
   const [collapsed, setCollapsed] = useState(group.collapsed);
 
   useEffect(() => {
@@ -97,6 +100,7 @@ export function GroupItem({ group, expandAll, isPopupWindow, autoRefocusEnabled 
                 key={tab.id}
                 tab={tab}
                 groupColor={group.color}
+                isActiveWindow={isActiveWindow}
               />
             ))}
             {group.tabs.length === 0 && (

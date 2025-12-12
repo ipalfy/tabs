@@ -66,6 +66,7 @@ export function TreeWindowItem({
             expandAll={expandAll}
             isPopupWindow={isPopupWindow}
             autoRefocusEnabled={autoRefocusEnabled}
+            isActiveWindow={!!window.isLastFocused}
           />
         ))}
 
@@ -76,6 +77,7 @@ export function TreeWindowItem({
             tab={tab}
             isPopupWindow={isPopupWindow}
             autoRefocusEnabled={autoRefocusEnabled}
+            isActiveWindow={!!window.isLastFocused}
           />
         ))}
       </SortableContext>

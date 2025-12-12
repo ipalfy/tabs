@@ -10,9 +10,16 @@ interface TreeTabItemProps {
   isPopupWindow: boolean;
   autoRefocusEnabled: boolean;
   groupColor?: string;
+  isActiveWindow?: boolean;
 }
 
-export function TreeTabItem({ tab, isPopupWindow, autoRefocusEnabled, groupColor }: TreeTabItemProps) {
+export function TreeTabItem({
+  tab,
+  isPopupWindow,
+  autoRefocusEnabled,
+  groupColor,
+  isActiveWindow = false,
+}: TreeTabItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `tab-${tab.id}`,
     data: { type: 'tab', tab },
@@ -64,11 +71,11 @@ export function TreeTabItem({ tab, isPopupWindow, autoRefocusEnabled, groupColor
   };
 
   const activeBorderClass =
-    tab.active && groupColor && colorMap[groupColor]
-      ? `${colorMap[groupColor]} ring-2 ring-inset` // Colored frame if grouped
-      : tab.active
-        ? 'ring-2 ring-inset ring-primary' // Default frame if active but no group
-        : ''; // Inactive state
+    tab.active && isActiveWindow
+      ? groupColor && colorMap[groupColor]
+        ? `${colorMap[groupColor]} ring-2 ring-inset` // Colored frame if grouped AND active window
+        : 'ring-2 ring-inset ring-primary' // Default frame if active but no group AND active window
+      : ''; // Inactive or background active
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: Container includes other interactive elements
@@ -79,7 +86,8 @@ export function TreeTabItem({ tab, isPopupWindow, autoRefocusEnabled, groupColor
       className={cn(
         'group flex items-center gap-3 py-2 px-3 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground border-b border-border/40 bg-background transition-all duration-200',
         activeBorderClass,
-        tab.active ? 'bg-muted' : '',
+        tab.active && isActiveWindow ? 'bg-muted' : '',
+        tab.active && !isActiveWindow ? 'font-bold bg-muted/50' : '', // Subtle style for background active tabs
       )}
       onClick={activateTab}
       onKeyDown={(e) => {

@@ -10,11 +10,9 @@ interface WindowItemProps {
   window: WindowData;
   index: number;
   expandAll?: boolean | null;
-  isPopupWindow: boolean;
-  autoRefocusEnabled: boolean;
 }
 
-export function WindowItem({ window, index, expandAll, isPopupWindow, autoRefocusEnabled }: WindowItemProps) {
+export function WindowItem({ window, index, expandAll }: WindowItemProps) {
   const { setNodeRef } = useDroppable({
     id: `window-${window.id}`,
     data: { type: 'window', window },
@@ -48,8 +46,7 @@ export function WindowItem({ window, index, expandAll, isPopupWindow, autoRefocu
               key={group.id}
               group={group}
               expandAll={expandAll}
-              isPopupWindow={isPopupWindow}
-              autoRefocusEnabled={autoRefocusEnabled}
+              isActiveWindow={!!window.isLastFocused}
             />
           ))}
 
@@ -60,7 +57,7 @@ export function WindowItem({ window, index, expandAll, isPopupWindow, autoRefocu
                 Ungrouped Tabs
               </div>
               {window.ungroupedTabs.map((tab) => (
-                <TabItem key={tab.id} tab={tab} />
+                <TabItem key={tab.id} tab={tab} isActiveWindow={!!window.isLastFocused} />
               ))}
             </div>
           )}

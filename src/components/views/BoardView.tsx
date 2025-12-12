@@ -24,16 +24,12 @@ interface BoardViewProps {
   windows: WindowData[];
   refresh: () => void;
   expandAll?: boolean | null;
-  isPopupWindow: boolean;
-  autoRefocusEnabled: boolean;
 }
 
 export function BoardView({
   windows,
   refresh,
   expandAll,
-  isPopupWindow,
-  autoRefocusEnabled,
 }: BoardViewProps) {
   const [_activeId, setActiveId] = useState<string | null>(null);
   const [activeItem, setActiveItem] = useState<DragItem | null>(null);
@@ -206,8 +202,6 @@ export function BoardView({
             window={window}
             index={index}
             expandAll={expandAll}
-            isPopupWindow={isPopupWindow}
-            autoRefocusEnabled={autoRefocusEnabled}
           />
         ))}
         {windows.length === 0 && (

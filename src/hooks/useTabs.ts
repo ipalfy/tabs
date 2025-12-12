@@ -13,6 +13,7 @@ export interface WindowData extends chrome.windows.Window {
   id: number;
   groups: GroupData[];
   ungroupedTabs: TabData[];
+  isLastFocused?: boolean;
 }
 
 export function useTabs(sortEnabled: boolean = false) {
@@ -20,11 +21,12 @@ export function useTabs(sortEnabled: boolean = false) {
 
   const fetchData = useCallback(async () => {
     try {
-      const [allWindows, allTabs, allGroups, currentWindow] = await Promise.all([
+      const [allWindows, allTabs, allGroups, currentWindow, lastFocusedWindow] = await Promise.all([
         chrome.windows.getAll(),
         chrome.tabs.query({}),
         chrome.tabGroups.query({}),
         chrome.windows.getCurrent(),
+        chrome.windows.getLastFocused({ windowTypes: ['normal', 'app'] }).catch(() => null),
       ]);
 
       const groupMap = new Map<number, GroupData>();
@@ -41,6 +43,7 @@ export function useTabs(sortEnabled: boolean = false) {
             id: w.id,
             groups: [],
             ungroupedTabs: [],
+            isLastFocused: lastFocusedWindow ? w.id === lastFocusedWindow.id : false,
           });
         }
       });

@@ -1,6 +1,4 @@
 import {
-  ChevronsDown,
-  ChevronsUp,
   Kanban,
   ListTree,
   Maximize2,
@@ -22,7 +20,6 @@ import { filterWindows } from './lib/searchUtils';
 function App() {
   const {
     isPopupWindow,
-    isTab,
     autoRefocusEnabled,
     setAutoRefocusEnabled,
     currentView,
@@ -42,13 +39,12 @@ function App() {
     if (isLoading) return []; // Avoid flashing empty/wrong data while loading settings
     const result = filterWindows(windows, searchQuery);
     // Move focused window to top
-    result.sort((a, b) => {
+    return [...result].sort((a, b) => {
       if (a.focused) return -1;
       if (b.focused) return 1;
       return 0;
     });
-    return result;
-  }, [windows, searchQuery]);
+  }, [windows, searchQuery, isLoading]);
   const lastActiveTabId = useRef<number | null>(null);
 
   // --- Auto-Scroll to Active Tab ---
@@ -192,8 +188,6 @@ function App() {
             windows={filteredWindows}
             refresh={refresh}
             expandAll={effectiveExpandAll}
-            isPopupWindow={isPopupWindow}
-            autoRefocusEnabled={autoRefocusEnabled}
           />
         ) : (
           <ListView
