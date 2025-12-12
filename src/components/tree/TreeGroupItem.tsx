@@ -23,8 +23,9 @@ export function TreeGroupItem({ group, expandAll, isPopupWindow, autoRefocusEnab
 
   useEffect(() => {
     if (expandAll === true) setCollapsed(false);
-    if (expandAll === false) setCollapsed(true);
-  }, [expandAll]);
+    else if (expandAll === false) setCollapsed(true);
+    else setCollapsed(group.collapsed);
+  }, [expandAll, group.collapsed]);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `group-${group.id}`,

@@ -29,7 +29,8 @@ export function TreeWindowItem({
 
   useEffect(() => {
     if (expandAll === true) setCollapsed(false);
-    if (expandAll === false) setCollapsed(true);
+    else if (expandAll === false) setCollapsed(true);
+    else setCollapsed(false); // Default to expanded when state is reset
   }, [expandAll]);
 
   const { setNodeRef } = useDroppable({

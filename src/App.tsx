@@ -1,4 +1,13 @@
-import { ChevronsDown, ChevronsUp, ExternalLink, Kanban, ListTree, X } from 'lucide-react';
+import {
+  ChevronsDown,
+  ChevronsUp,
+  ExternalLink,
+  Kanban,
+  ListTree,
+  Maximize2,
+  Minimize2,
+  X,
+} from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AutoRefocusToggle } from './components/ui/AutoRefocusToggle';
 import { Input } from './components/ui/input';
@@ -17,7 +26,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentView, setCurrentView] = useState('list');
   const [expandAll, setExpandAll] = useState<boolean | null>(null);
-  const { isPopupWindow, autoRefocusEnabled, setAutoRefocusEnabled } = usePopupSettings();
+  const { isPopupWindow, isTab, autoRefocusEnabled, setAutoRefocusEnabled } = usePopupSettings();
 
   const filteredWindows = useMemo(() => {
     const result = filterWindows(windows, searchQuery);
@@ -64,15 +73,33 @@ function App() {
   }, [windows]);
 
   const toggleExpandAll = () => {
-    // Toggle between Expand (true) and Collapse (false)
-    // If currently null (mixed), default to Collapse (false)
-    setExpandAll((prev) => prev === false);
+    // Tri-state cycle: null (Actual) -> false (Collapse All) -> true (Expand All) -> null
+    setExpandAll((prev) => {
+      if (prev === null) return false;
+      if (prev === false) return true;
+      return null;
+    });
   };
+
+  const getExpandButtonIcon = () => {
+    if (expandAll === null) return <Minimize2 size={18} />; // Next: Collapse All
+    if (expandAll === false) return <Maximize2 size={18} />; // Next: Expand All
+    return <ListTree size={18} />; // Next: Restore Actual
+  };
+
+  const getExpandButtonTooltip = () => {
+    if (expandAll === null) return 'Collapse All';
+    if (expandAll === false) return 'Expand All';
+    return 'Restore Default View';
+  };
+
+  // Force expand all when searching
+  const effectiveExpandAll = searchQuery ? true : expandAll;
 
   const openInNewWindow = async () => {
     try {
       const currentWindow = await chrome.windows.getCurrent();
-      chrome.windows.create({
+      await chrome.windows.create({
         url: chrome.runtime.getURL('index.html'),
         type: 'popup',
         width: 450,
@@ -80,21 +107,38 @@ function App() {
         left: currentWindow.left,
         top: (currentWindow.top || 0) + (currentWindow.height || 0) + 10, // Position below current window
       });
-    } catch (_error) {
+    } catch (error) {
+      console.error('Failed to open new window:', error);
       // Fallback if we can't get current window position
-      chrome.windows.create({
-        url: chrome.runtime.getURL('index.html'),
-        type: 'popup',
-        width: 450,
-        height: 700,
-      });
+      try {
+        await chrome.windows.create({
+          url: chrome.runtime.getURL('index.html'),
+          type: 'popup',
+          width: 450,
+          height: 700,
+        });
+      } catch (fallbackError) {
+        console.error('Fallback failed:', fallbackError);
+      }
     }
   };
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
       {/* Header / Search Bar */}
-      <div className="p-4 border-b flex flex-col sm:flex-row items-start sm:items-center gap-4">
+      <div className="p-4 border-b flex items-center gap-4">
+        {currentView === 'list' && (
+          <Tooltip content={getExpandButtonTooltip()}>
+            <button
+              type="button"
+              onClick={toggleExpandAll}
+              className="p-2 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            >
+              {getExpandButtonIcon()}
+            </button>
+          </Tooltip>
+        )}
+
         <div className="relative flex-1 min-w-0">
           <Input
             placeholder="Filter windows, groups, tabs..."
@@ -113,20 +157,15 @@ function App() {
           )}
         </div>
 
-        <div className="flex items-center gap-1 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <Tooltip content="Sort by recency">
-            <div className="flex items-center gap-2">
-              <Switch id="sort-mode" checked={isSortEnabled} onCheckedChange={setIsSortEnabled} />
-              <label
-                htmlFor="sort-mode"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 whitespace-nowrap hidden lg:inline-block"
-              >
-                Recency
-              </label>
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Recency</span>
+              <Switch id="sort-mode" checked={isSortEnabled} onCheckedChange={setIsSortEnabled} className="h-5 w-9" />
             </div>
           </Tooltip>
 
-          {isPopupWindow && <AutoRefocusToggle checked={autoRefocusEnabled} onCheckedChange={setAutoRefocusEnabled} />}
+          <AutoRefocusToggle checked={autoRefocusEnabled} onCheckedChange={setAutoRefocusEnabled} />
 
           {!isPopupWindow && (
             <Tooltip content="Open in new window">
@@ -163,18 +202,6 @@ function App() {
               <ListTree size={18} />
             </button>
           </Tooltip>
-
-          {currentView === 'list' && (
-            <Tooltip content={expandAll === false ? 'Expand All' : 'Collapse All'}>
-              <button
-                type="button"
-                onClick={toggleExpandAll}
-                className="p-2 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {expandAll === false ? <ChevronsDown size={18} /> : <ChevronsUp size={18} />}
-              </button>
-            </Tooltip>
-          )}
         </div>
       </div>
 
@@ -190,7 +217,7 @@ function App() {
           <ListView
             windows={filteredWindows}
             refresh={refresh}
-            expandAll={expandAll}
+            expandAll={effectiveExpandAll}
             isPopupWindow={isPopupWindow}
             autoRefocusEnabled={autoRefocusEnabled}
           />
