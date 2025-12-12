@@ -42,7 +42,7 @@ export function TreeTabItem({ tab, isPopupWindow, autoRefocusEnabled, groupColor
         } catch (_error) {
           // Popup might be closed, ignore error
         }
-      }, 1000); // 1 second delay
+      }, 200); // 200ms delay (faster refocus)
     }
   };
 

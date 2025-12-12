@@ -1,7 +1,6 @@
 import {
   ChevronsDown,
   ChevronsUp,
-  ExternalLink,
   Kanban,
   ListTree,
   Maximize2,
@@ -21,14 +20,26 @@ import { useTabs } from './hooks/useTabs';
 import { filterWindows } from './lib/searchUtils';
 
 function App() {
-  const [isSortEnabled, setIsSortEnabled] = useState(true);
+  const {
+    isPopupWindow,
+    isTab,
+    autoRefocusEnabled,
+    setAutoRefocusEnabled,
+    currentView,
+    setCurrentView,
+    isSortEnabled,
+    setIsSortEnabled,
+    isLoading,
+  } = usePopupSettings();
+
+  // Use the stored sort setting for useTabs
   const { windows, refresh } = useTabs(isSortEnabled);
+  
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentView, setCurrentView] = useState('list');
   const [expandAll, setExpandAll] = useState<boolean | null>(null);
-  const { isPopupWindow, isTab, autoRefocusEnabled, setAutoRefocusEnabled } = usePopupSettings();
 
   const filteredWindows = useMemo(() => {
+    if (isLoading) return []; // Avoid flashing empty/wrong data while loading settings
     const result = filterWindows(windows, searchQuery);
     // Move focused window to top
     result.sort((a, b) => {
@@ -96,40 +107,16 @@ function App() {
   // Force expand all when searching
   const effectiveExpandAll = searchQuery ? true : expandAll;
 
-  const openInNewWindow = async () => {
-    try {
-      const currentWindow = await chrome.windows.getCurrent();
-      await chrome.windows.create({
-        url: chrome.runtime.getURL('index.html'),
-        type: 'popup',
-        width: 450,
-        height: 700,
-        left: currentWindow.left,
-        top: (currentWindow.top || 0) + (currentWindow.height || 0) + 10, // Position below current window
-      });
-
-      // If we are currently in a side panel (button is visible implies not a popup)
-      // and a new popup was successfully created, hide this side panel.
-      if (!isPopupWindow) {
-        // Assume if button was visible and not a popup, it's a sidepanel.
-        // currentWindow.id is the ID of the browser window this side panel is attached to.
-        await chrome.sidePanel.hide({ windowId: currentWindow.id });
-      }
-    } catch (error) {
-      console.error('Failed to open new window:', error);
-      // Fallback if we can't get current window position
-      try {
-        await chrome.windows.create({
-          url: chrome.runtime.getURL('index.html'),
-          type: 'popup',
-          width: 450,
-          height: 700,
-        });
-      } catch (fallbackError) {
-        console.error('Fallback failed:', fallbackError);
-      }
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <span className="text-sm text-muted-foreground">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
@@ -172,18 +159,6 @@ function App() {
           </Tooltip>
 
           <AutoRefocusToggle checked={autoRefocusEnabled} onCheckedChange={setAutoRefocusEnabled} />
-
-          {!isPopupWindow && (
-            <Tooltip content="Open in new window">
-              <button
-                type="button"
-                onClick={openInNewWindow}
-                className="p-2 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ExternalLink size={18} />
-              </button>
-            </Tooltip>
-          )}
 
           <Tooltip content="Board view">
             <button

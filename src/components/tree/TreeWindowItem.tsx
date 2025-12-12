@@ -71,7 +71,12 @@ export function TreeWindowItem({
 
         {/* Ungrouped Tabs */}
         {window.ungroupedTabs.map((tab) => (
-          <TreeTabItem key={tab.id} tab={tab} />
+          <TreeTabItem
+            key={tab.id}
+            tab={tab}
+            isPopupWindow={isPopupWindow}
+            autoRefocusEnabled={autoRefocusEnabled}
+          />
         ))}
       </SortableContext>
 

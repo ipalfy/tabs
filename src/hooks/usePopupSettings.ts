@@ -1,80 +1,87 @@
 import { useCallback, useEffect, useState } from 'react';
 
-interface PopupSettings {
+interface AppSettings {
   autoRefocusEnabled: boolean;
+  currentView: 'list' | 'board';
+  isSortEnabled: boolean;
 }
 
-const STORAGE_KEY = 'popupSettings';
-const DEFAULT_SETTINGS: PopupSettings = {
+const STORAGE_KEY = 'appSettings'; // Changed key to reflect broader scope
+const OLD_STORAGE_KEY = 'popupSettings'; // Migration support
+
+const DEFAULT_SETTINGS: AppSettings = {
   autoRefocusEnabled: true,
+  currentView: 'list',
+  isSortEnabled: true,
 };
 
 export function usePopupSettings() {
   const [isPopupWindow, setIsPopupWindow] = useState<boolean>(false);
   const [isTab, setIsTab] = useState<boolean>(false);
-  const [autoRefocusEnabled, setAutoRefocusEnabled] = useState<boolean>(DEFAULT_SETTINGS.autoRefocusEnabled);
+  
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Detect context (popup or tab)
   useEffect(() => {
-    const detectContext = async () => {
-      try {
-        const currentWindow = await chrome.windows.getCurrent();
-        setIsPopupWindow(currentWindow.type === 'popup');
-      } catch (error) {
-        console.error('Failed to detect window type:', error);
-        setIsPopupWindow(false);
+    const init = async () => {
+      // Parallelize context detection and settings loading
+      const [currentWindow, currentTab, settingsResult, oldSettingsResult] = await Promise.all([
+        chrome.windows.getCurrent().catch(() => null),
+        chrome.tabs.getCurrent().catch(() => null),
+        chrome.storage.local.get(STORAGE_KEY).catch(() => ({})),
+        chrome.storage.local.get(OLD_STORAGE_KEY).catch(() => ({})),
+      ]);
+
+      // Context State
+      setIsPopupWindow(currentWindow?.type === 'popup');
+      setIsTab(!!currentTab);
+
+      // Settings State
+      let loadedSettings = settingsResult[STORAGE_KEY];
+
+      // Migration Logic
+      if (!loadedSettings && oldSettingsResult[OLD_STORAGE_KEY]) {
+        loadedSettings = {
+          ...DEFAULT_SETTINGS,
+          autoRefocusEnabled: oldSettingsResult[OLD_STORAGE_KEY].autoRefocusEnabled,
+        };
+        // Migrate async (don't await)
+        chrome.storage.local.set({ [STORAGE_KEY]: loadedSettings });
+        chrome.storage.local.remove(OLD_STORAGE_KEY);
       }
 
-      try {
-        const currentTab = await chrome.tabs.getCurrent();
-        setIsTab(!!currentTab);
-      } catch (error) {
-        // If it fails (e.g. not in a tab context), isTab remains false
-        setIsTab(false);
-      }
+      setSettings(loadedSettings ? { ...DEFAULT_SETTINGS, ...loadedSettings } : DEFAULT_SETTINGS);
+      setIsLoading(false);
     };
 
-    detectContext();
+    init();
   }, []);
 
-  // Load settings from storage
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const result = await chrome.storage.local.get(STORAGE_KEY);
-        const settings: PopupSettings = result[STORAGE_KEY] || DEFAULT_SETTINGS;
-        setAutoRefocusEnabled(settings.autoRefocusEnabled);
-      } catch (error) {
-        console.error('Failed to load popup settings:', error);
-        setAutoRefocusEnabled(DEFAULT_SETTINGS.autoRefocusEnabled);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Removed redundant useEffects
 
-    loadSettings();
-  }, []);
 
-  // Save settings to storage
-  const updateAutoRefocusEnabled = useCallback(async (enabled: boolean) => {
-    // Optimistic update
-    setAutoRefocusEnabled(enabled);
-    try {
-      const settings: PopupSettings = { autoRefocusEnabled: enabled };
-      await chrome.storage.local.set({ [STORAGE_KEY]: settings });
-    } catch (error) {
-      console.error('Failed to save popup settings:', error);
-      // Revert on error
-      setAutoRefocusEnabled(!enabled);
-    }
+  // Generic update function
+  const updateSetting = useCallback(async <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
+    setSettings((prev) => {
+      const newSettings = { ...prev, [key]: value };
+      chrome.storage.local.set({ [STORAGE_KEY]: newSettings }).catch(err => {
+        console.error("Failed to save setting:", err);
+      });
+      return newSettings;
+    });
   }, []);
 
   return {
     isPopupWindow,
     isTab,
-    autoRefocusEnabled,
-    setAutoRefocusEnabled: updateAutoRefocusEnabled,
     isLoading,
+    // Individual exposed values for easier consumption
+    autoRefocusEnabled: settings.autoRefocusEnabled,
+    currentView: settings.currentView,
+    isSortEnabled: settings.isSortEnabled,
+    // Setters
+    setAutoRefocusEnabled: (val: boolean) => updateSetting('autoRefocusEnabled', val),
+    setCurrentView: (val: 'list' | 'board') => updateSetting('currentView', val),
+    setIsSortEnabled: (val: boolean) => updateSetting('isSortEnabled', val),
   };
 }
